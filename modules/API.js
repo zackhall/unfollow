@@ -39,4 +39,43 @@ API.prototype.unfollow = function(screenName, callback) {
 	})
 }
 
+API.prototype.friends = function(callback) {
+	var api = this,
+		friends = [],
+		nextCursor = -1;
+
+	(function getFriends() {
+		api.client.get('friends/list', {
+			cursor: nextCursor,
+			count: 200
+		}, function(err, data, response) {
+			friends = friends.concat(data.users);
+			nextCursor = data.next_cursor;
+
+			if (nextCursor == 0) {
+				return callback(null, {
+					friends: friends
+				});
+			} else {
+				getFriends();
+			}
+		})
+	})();
+}
+
 module.exports = API;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
