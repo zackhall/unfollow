@@ -20,6 +20,7 @@ var argv = require('yargs')
 			type: 'number'
 		}
 	})
+	.help('h').alias('h', 'help')
 	.argv;
 
 program(argv);
