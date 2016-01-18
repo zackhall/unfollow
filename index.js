@@ -2,7 +2,7 @@
 
 require('babel-core/register');
 
-var unfollow = require('./modules/unfollow.js');
+var program = require('./modules/program.js');
 
 var argv = require('yargs')
 	.usage('$0 <command>')
@@ -22,4 +22,4 @@ var argv = require('yargs')
 	})
 	.argv;
 
-unfollow(argv);
+program(argv);
