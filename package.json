@@ -1,17 +1,18 @@
 {
   "name": "unfollow",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Tool to unfollow inactive twitter accounts",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "preferGlobal": "true",
+  "bin": {
+    "unfollow" : "main.js"
   },
-  "author": "Zack Hall",
+  "author": {
+    "name": "Zack Hall",
+    "url": "https://github.com/zackhall"
+  },
   "license": "MIT",
   "dependencies": {
-    "babel": "^6.3.26",
-    "babel-polyfill": "^6.3.14",
-    "babel-register": "^6.4.3",
     "colors": "^1.1.2",
     "inquirer": "^0.11.2",
     "moment": "^2.11.1",
