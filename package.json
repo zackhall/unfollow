@@ -1,6 +1,6 @@
 {
   "name": "unfollow",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Tool to help identify and unfollow inactive twitter accounts",
   "main": "index.js",
   "preferGlobal": "true",
