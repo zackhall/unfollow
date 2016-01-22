@@ -1,6 +1,7 @@
 'use strict';
 
-var Twit = require("Twit");
+var Twit = require('Twit');
+var Q = require('q');
 
 function API(config) {
 	this.client = new Twit({
@@ -18,29 +19,27 @@ function _parseScreenName(screenName) {
 	return screenName;
 }
 
-API.prototype.unfollow = function(screenName, callback) {
+API.prototype.unfollow = function(screenName) {
+	var deferred = Q.defer();
+
 	screenName = _parseScreenName(screenName);
 
 	this.client.post('friendships/destroy', {
 		screen_name: screenName
 	}, function(err, data, response) {
-		var message; 
-
-		if (err) {
-			message = 'Error unfollowing @' + screenName + ' / ' + err.message;
-			return callback(new Error(message));
+		if (err || !data) {
+			deferred.reject('Error unfollowing @' + screenName + ' / ' + err.message);
 		}
 
-		if (data) {
-			return callback(null, {
-				message: 'Unfollowed @' + screenName
-			});
-		}
-	})
+		deferred.resolve();
+	});
+
+	return deferred.promise;
 }
 
-API.prototype.friends = function(callback) {
+API.prototype.friends = function() {
 	var api = this,
+		deferred = Q.defer(),
 		friends = [],
 		nextCursor = -1;
 
@@ -49,18 +48,20 @@ API.prototype.friends = function(callback) {
 			cursor: nextCursor,
 			count: 200
 		}, function(err, data, response) {
+			if (err) deferred.reject('Error retrieving friends list. / ' + err.message);
+
 			friends = friends.concat(data.users);
 			nextCursor = data.next_cursor;
 
 			if (nextCursor == 0) {
-				return callback(null, {
-					friends: friends
-				});
+				deferred.resolve(friends);
 			} else {
 				getFriends();
 			}
 		})
 	})();
+
+	return deferred.promise;
 }
 
 module.exports = API;

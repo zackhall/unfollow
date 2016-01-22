@@ -1,6 +1,7 @@
 'use strict';
 
 var API = require('./API.js');
+var Q = require('q');
 var moment = require('moment');
 var inquirer = require('inquirer');
 var colors = require('colors');
@@ -21,71 +22,76 @@ function program(argv) {
 }
 
 function unfollowUser(user) {
-	api.unfollow(user, function(err, data) {
-		if (err) {
-			console.log(err.message);
-		} else if (data) {
-			console.log(data.message);
-		}
-	});
+	api.unfollow(user)
+	   .then(function() {
+	   		console.log('Unfollowed %s', user)
+	   })
+	   .fail(function(error) {
+	   		console.log(error.message);
+	   });
 }
 
 function unfollowStaleUsers(argv) {
 	var messageBuffer = [];
 
-	api.friends(onFriendsResponse);
+	api.friends()
+	    .then(onFriendsReturn);
 
-	function onFriendsResponse(err, data) {
-		if (err) {
-			console.log(err.message);
-		} else if (data) {
-			var friends = 
-				data.friends.filter(
-					isContentStale(argv.stale));
+	function onFriendsReturn(friends) {
+    	friends = friends.filter(isContentStale(argv.stale));
 
-			if (friends.length == 0) {
-				console.log("No friends have content more than %s days stale.", argv.stale);
-				return;
-			}
+    	if (!friends) {
+    		console.log('No friends have content more than %s days stale.', argv.stale);
+    		return;
+    	}
 
-			(function promptUnfollow() {
-				var user = friends.shift();
+    	(function iterate() {
+    		var user = friends.shift();
 
-				displayTweet(user);
+    		promptUnfollow(user)
+    			.then(onAnswer);
 
-				inquirer.prompt([{
-					type: 'confirm',
-					name: 'confirmUnfollow',
-					message: 'Unfollow @' + user.screen_name + '?'
-				}], onAnswer);
-
-				function onAnswer(answers) {
-					if (answers.confirmUnfollow) {
-						api.unfollow(user.screen_name, addToBuffer);
-					}
-
-					flushBuffer();
-
-					if (friends.length > 0) {
-						promptUnfollow();
-					}
+    		function onAnswer(answers) {
+				if (answers.confirmUnfollow) {
+					api.unfollow(user.screen_name)
+						.then(function() {
+							messageBuffer.push('Unfollowed @%s', user.screen_name);
+						});
 				}
-			})();
-		}
-	}
 
-	function addToBuffer(err, data) {
-		if (err) {
-			messageBuffer.push(err.message);
-		} else if (data) {
-			messageBuffer.push(data.message);
-		}
-	}
+				// print and clear buffer
+				printArray(messageBuffer);
+				messageBuffer = [];
 
-	function flushBuffer() {
-		while (messageBuffer.length) {
-			console.log(messageBuffer.pop());
-		}
+				if (friends.length > 0) {
+					iterate();
+				}
+			}
+    	})();
+    }
+}
+
+function promptUnfollow(user) {
+	var deferred = Q.defer();
+
+	displayTweet(user);
+
+	inquirer.prompt([{
+		type: 'confirm',
+		name: 'confirmUnfollow',
+		message: 'Unfollow @' + user.screen_name + '?'
+	}], function onAnswer(answers) {
+		deferred.resolve(answers);
+	})
+
+	return deferred.promise();
+}
+
+function printArray(arr) {
+	var tmp = arr.slice();
+
+	while (tmp.length) {
+		console.log(tmp.pop());
 	}
 }
 
